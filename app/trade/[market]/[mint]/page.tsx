@@ -1,5 +1,8 @@
+'use client'
 
 import TradeView from "@/components/TradeView";
+import { useParams } from 'next/navigation'
+import { useEffect } from "react";
 
 interface Data {
   time: number;
@@ -11,8 +14,24 @@ interface Data {
 
 function page() {
 
-  
+  const params = useParams<{ market: string, mint: string }>(); 
+  useEffect(() => {
 
+    async function getdata() {
+        console.log(params.market, params.mint);
+        let link: string = '';
+        if (params.market === "SOL") {
+            link = `https://frontend-api-2.pump.fun/candlesticks/${params.mint}?offset=0&limit=1000&timeframe=5`;
+        } else if (params.market === "ETH") {
+            link = `https://app.geckoterminal.com/api/p1/eth/pools/${params.mint}?include=dex%2Cdex.network.explorers%2Cdex_link_services%2Cnetwork_link_services%2Cpairs%2Ctoken_link_services%2Ctokens.token_security_metric%2Ctokens.tags%2Cpool_locked_liquidities&base_token=0d`;
+        }
+        const data = await getData(link, params.market as "ETH" | "SOL" | "BTC");
+        console.log(data);
+    }
+
+    getdata();
+
+  },[])
 
   return (
     <div>
