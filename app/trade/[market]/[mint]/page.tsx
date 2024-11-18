@@ -2,9 +2,9 @@
 
 import TradeView from "@/components/TradeView";
 import { useParams } from 'next/navigation'
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-interface Data {
+export interface Data {
   time: number;
   open: number;
   high: number;
@@ -15,6 +15,7 @@ interface Data {
 function page() {
 
   const params = useParams<{ market: string, mint: string }>(); 
+  const [data, setData] = useState<Data[] | null>(null);
   useEffect(() => {
 
     async function getdata() {
@@ -23,10 +24,11 @@ function page() {
         if (params.market === "SOL") {
             link = `https://frontend-api-2.pump.fun/candlesticks/${params.mint}?offset=0&limit=1000&timeframe=5`;
         } else if (params.market === "ETH") {
-            link = `https://app.geckoterminal.com/api/p1/eth/pools/${params.mint}?include=dex%2Cdex.network.explorers%2Cdex_link_services%2Cnetwork_link_services%2Cpairs%2Ctoken_link_services%2Ctokens.token_security_metric%2Ctokens.tags%2Cpool_locked_liquidities&base_token=0d`;
+            link = `https://api.geckoterminal.com/api/v2/networks/eth/pools/${params.mint}/ohlcv/day`;
         }
         const data = await getData(link, params.market as "ETH" | "SOL" | "BTC");
-        console.log(data);
+        console.log("data", data);
+        setData(data);
     }
 
     getdata();
@@ -35,7 +37,11 @@ function page() {
 
   return (
     <div>
-      <TradeView />
+      {
+        data && (
+          <TradeView data={data} />
+        )
+      }
     </div>
   )
 }
@@ -43,44 +49,37 @@ function page() {
 export default page
 
 const getData = async(link: string, from: "ETH" | "SOL" | "BTC"): Promise<Data[]> => {
-    const response = await fetch(link);
-    const data = await response.json();
-
+    let response: Response;
+    let data: any;
+    try { 
+        response = await fetch(link);
+        data = await response.json();
+    } catch (error) {
+        console.error("Error fetching OHLC data:", error);
+        return [];
+    }
+      
     if (from === "ETH") {
       try {
-        const response = await fetch(link);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data: ${response.statusText}`);
-        }
-    
-        const data = await response.json();
-    
-        // Available intervals in the API response
-        const intervals = [
-          "last_3600_s", // 1 hour
-          "last_7200_s", // 2 hours
-          "last_10800_s", // 3 hours
-          "last_14400_s", // 4 hours
-        ];
-    
-        const ohlcData: Data[] = [];
-    
-        for (const interval of intervals) {
-          const intervalData = data?.data?.attributes?.price_change_data?.[interval]?.prices;
-          const volumeData = data?.data?.attributes?.volume_data?.[interval];
-    
-          if (intervalData && volumeData) {
-            ohlcData.push({
-              open: parseFloat(intervalData.base_token_start_price_in_usd),
-              high: parseFloat(intervalData.base_token_high_price_in_usd),
-              low: parseFloat(intervalData.base_token_low_price_in_usd),
-              close: parseFloat(intervalData.base_token_last_price_in_usd),
-              time: intervalData.base_token_low_price_timestamp, // Use low price timestamp as a reference
-            });
+        
+        let ohclo = data.data.attributes.ohlcv_list;
+
+        let returnData = ohclo.map((ohlc: any) => {
+          return {
+            time: ohlc[0],
+            open: ohlc[1],
+            high: ohlc[2],
+            low: ohlc[3],
+            close: ohlc[4],
           }
-        }
-    
-        return ohlcData;
+        }).sort((a: any, b: any) => a.time - b.time);
+
+        console.log("returnData", returnData);  
+
+        
+
+        return returnData;
+
       } catch (error) {
         console.error("Error fetching OHLC data:", error);
         return [];
@@ -104,5 +103,5 @@ const getData = async(link: string, from: "ETH" | "SOL" | "BTC"): Promise<Data[]
       return series;
     }
 
-    return data;
+    return [];
 }

@@ -1,8 +1,9 @@
 "use client";
 import { createChart } from "lightweight-charts";
 import { useEffect, useRef } from "react";
+import { Data } from "@/app/trade/[market]/[mint]/page";
 
-function TradeView() {
+function TradeView({ data }: { data: Data[] }) {
   const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,20 +35,21 @@ function TradeView() {
           wickVisible: false
         });
     
-        const response = await fetch('https://frontend-api-2.pump.fun/candlesticks/8TBYkVWEE4fW5qQoV9xAPowM35qxBLsfuuo4YMVipump?offset=0&limit=1000&timeframe=5');
-        const data = await response.json();
+        // const response = await fetch('https://frontend-api-2.pump.fun/candlesticks/8TBYkVWEE4fW5qQoV9xAPowM35qxBLsfuuo4YMVipump?offset=0&limit=1000&timeframe=5');
+        // const data = await response.json();
     
-        const series = data.map((candle: any) => {
-            return {
-                time: candle.timestamp,
-                open: candle.open,
-                high: candle.high,
-                low: candle.low,
-                close: candle.close
-            }
-        })
+        // const series = data.map((candle: any) => {
+        //     return {
+        //         time: candle.timestamp,
+        //         open: candle.open,
+        //         high: candle.high,
+        //         low: candle.low,
+        //         close: candle.close
+        //     }`
+        // })
+        console.log("TradingView Data", data);
         
-        candlestickSeries.setData(series as any);
+        candlestickSeries.setData(data as any);
         firstChart.timeScale().fitContent();
 
     }
